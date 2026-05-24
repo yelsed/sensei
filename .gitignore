@@ -1,0 +1,10 @@
+# Rust build artifacts
+/target/
+/zed/target/
+
+# Node
+node_modules/
+/vscode/out/
+
+# OMC orchestration state
+.omc/
