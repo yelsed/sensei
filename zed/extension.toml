@@ -1,0 +1,22 @@
+[extension]
+id = "sensei"
+name = "Sensei"
+version = "0.1.0"
+description = "Personalized tech stack learning tips"
+authors = ["sensei"]
+repository = ""
+
+[language_servers]
+
+[slash_commands]
+
+[[slash_commands.sensei-tip]]
+description = "Show a random tip for your tech stack"
+
+[[slash_commands.sensei-explain]]
+description = "Explain the selected code or a concept"
+requires_argument = false
+
+[[slash_commands.sensei-ask]]
+description = "Ask a question about your tech stack"
+requires_argument = true

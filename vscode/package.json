@@ -1,0 +1,46 @@
+{
+  "name": "sensei",
+  "displayName": "Sensei",
+  "description": "Personalized tech stack learning tips",
+  "version": "0.1.0",
+  "engines": { "vscode": "^1.85.0" },
+  "activationEvents": ["onStartupFinished"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "sensei.tip", "title": "Sensei: Show Tip" },
+      { "command": "sensei.explain", "title": "Sensei: Explain Selection" },
+      { "command": "sensei.ask", "title": "Sensei: Ask a Question" }
+    ],
+    "menus": {
+      "editor/context": [
+        { "command": "sensei.explain", "group": "sensei@1" },
+        { "command": "sensei.ask", "group": "sensei@2" }
+      ]
+    },
+    "keybindings": [
+      { "command": "sensei.tip", "key": "ctrl+shift+t", "when": "editorFocus" },
+      { "command": "sensei.explain", "key": "ctrl+shift+e", "when": "editorHasSelection" },
+      { "command": "sensei.ask", "key": "ctrl+shift+a", "when": "editorFocus" }
+    ],
+    "configuration": {
+      "title": "Sensei",
+      "properties": {
+        "sensei.binaryPath": {
+          "type": "string",
+          "default": "sensei",
+          "description": "Path to the sensei binary"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  }
+}

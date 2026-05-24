@@ -1,0 +1,42 @@
+[
+  { "topic": "vim", "tip": "Use `ci\"` to change text inside quotes without moving your cursor to the start.", "tags": ["motion", "editing"] },
+  { "topic": "vim", "tip": "Use `zz` to center the current line in the window — great after jumping to a search result.", "tags": ["navigation"] },
+  { "topic": "vim", "tip": "`*` searches forward for the word under your cursor. `#` searches backward.", "tags": ["search"] },
+  { "topic": "vim", "tip": "Use `gf` to open the file whose path is under the cursor.", "tags": ["navigation", "files"] },
+  { "topic": "vim", "tip": "`<C-o>` jumps back to your previous cursor position. `<C-i>` jumps forward.", "tags": ["navigation"] },
+  { "topic": "vim", "tip": "Use `va{` to visually select everything including the curly braces, or `vi{` for inside only.", "tags": ["visual", "editing"] },
+  { "topic": "vim", "tip": "`gg=G` auto-indents the entire file. Useful for quick formatting.", "tags": ["formatting"] },
+  { "topic": "vim", "tip": "Use `:set wrap!` to toggle line wrapping without leaving the editor.", "tags": ["settings"] },
+  { "topic": "vim", "tip": "`q:` opens the command history window. Navigate and re-run past commands.", "tags": ["productivity"] },
+  { "topic": "vim", "tip": "In insert mode, `<C-r>\"` pastes from the default register without leaving insert mode.", "tags": ["editing", "registers"] },
+
+  { "topic": "nuxt", "tip": "Use `useAsyncData` with a unique key per page to avoid cache collisions between routes.", "tags": ["data-fetching", "caching"] },
+  { "topic": "nuxt", "tip": "`useFetch` is shorthand for `useAsyncData` + `$fetch`. Use `useFetch` for simple cases, `useAsyncData` when you need more control.", "tags": ["data-fetching"] },
+  { "topic": "nuxt", "tip": "Place shared composables in `~/composables/` — Nuxt auto-imports them with no import statement needed.", "tags": ["composables", "auto-import"] },
+  { "topic": "nuxt", "tip": "Use `definePageMeta({ layout: 'myLayout' })` inside a page to switch layouts without wrapping components.", "tags": ["layouts"] },
+  { "topic": "nuxt", "tip": "`useRuntimeConfig()` exposes public config on client + server, and private keys server-side only. Never put secrets in `public`.", "tags": ["config", "security"] },
+  { "topic": "nuxt", "tip": "The `~/server/api/` directory creates API routes automatically. Export a default `defineEventHandler` function.", "tags": ["server", "api"] },
+  { "topic": "nuxt", "tip": "Use `<NuxtLink>` instead of `<a>` for internal links — it prefetches the route on hover.", "tags": ["performance", "routing"] },
+  { "topic": "nuxt", "tip": "`useState` persists state between pages on the client. Useful as a lightweight alternative to Pinia for simple shared state.", "tags": ["state"] },
+
+  { "topic": "docker", "tip": "Use `--no-cache` flag with `docker build` to force a clean rebuild when debugging layer issues.", "tags": ["build"] },
+  { "topic": "docker", "tip": "Multi-stage builds keep your final image small: build in one stage, copy only the artifact to the next.", "tags": ["build", "optimization"] },
+  { "topic": "docker", "tip": "`docker exec -it <container> sh` opens a shell inside a running container for quick debugging.", "tags": ["debugging"] },
+  { "topic": "docker", "tip": "Put frequently changing lines (like `COPY . .`) at the bottom of your Dockerfile to maximize layer cache reuse.", "tags": ["caching", "optimization"] },
+  { "topic": "docker", "tip": "Use `.dockerignore` to exclude `node_modules`, `.git`, and build artifacts — it speeds up build context transfer.", "tags": ["build", "performance"] },
+  { "topic": "docker", "tip": "`docker compose watch` (Compose v2.22+) auto-rebuilds on file changes during development.", "tags": ["development", "compose"] },
+  { "topic": "docker", "tip": "Use named volumes for persistent data (`docker volume create`) rather than bind mounts in production.", "tags": ["volumes", "production"] },
+
+  { "topic": "git", "tip": "`git stash push -m 'description'` names your stash so `git stash list` stays readable.", "tags": ["stash"] },
+  { "topic": "git", "tip": "Use `git log --oneline --graph --all` for a compact visual view of all branches.", "tags": ["log", "branches"] },
+  { "topic": "git", "tip": "`git commit --fixup <sha>` creates a fixup commit. Later, `git rebase -i --autosquash` merges them automatically.", "tags": ["rebase", "workflow"] },
+  { "topic": "git", "tip": "`git bisect start` + `git bisect good/bad` does a binary search through commits to find which one introduced a bug.", "tags": ["debugging"] },
+  { "topic": "git", "tip": "Use `git restore --staged <file>` to unstage a file without discarding your working tree changes.", "tags": ["staging"] },
+  { "topic": "git", "tip": "`git diff --stat HEAD~1` shows which files changed in the last commit with a line count summary.", "tags": ["diff"] },
+
+  { "topic": "zsh", "tip": "Use `!!` to repeat the last command. `sudo !!` is the fastest way to re-run with sudo.", "tags": ["history"] },
+  { "topic": "zsh", "tip": "`<C-r>` starts a fuzzy history search. If you have fzf installed, it becomes a full interactive picker.", "tags": ["history", "fzf"] },
+  { "topic": "zsh", "tip": "Use `take dirname` (oh-my-zsh) to create a directory and immediately `cd` into it.", "tags": ["navigation", "productivity"] },
+  { "topic": "zsh", "tip": "Global aliases like `alias -g G='| grep'` let you write `ls G pattern` anywhere in a command.", "tags": ["aliases"] },
+  { "topic": "zsh", "tip": "`cd -` jumps back to the previous directory. Combine with `pushd`/`popd` for a directory stack.", "tags": ["navigation"] }
+]
