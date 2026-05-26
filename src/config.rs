@@ -53,3 +53,51 @@ pub fn load_stack(config: &Config) -> Option<String> {
     let path = stack_file_path(config);
     fs::read_to_string(&path).ok()
 }
+
+const STARTER_CONFIG: &str = r#"# sensei config
+model = "phi3"
+stack_file = "~/.config/sensei/my_stack.md"
+tips_file = "~/.config/sensei/tips.json"
+"#;
+
+const STARTER_STACK: &str = r#"# My stack
+
+Fill this in — the richer it is, the better sensei's tips and answers.
+
+## Editor
+- Neovim (learning the motions)
+
+## Languages
+-
+
+## Tools
+-
+
+## What I want to get better at
+- Neovim motions and shortcuts
+"#;
+
+/// Scaffold `config.toml` and `my_stack.md` in the config dir. Never overwrites
+/// an existing file. Returns the status of each path so the caller can report it.
+pub fn init_files() -> Vec<(PathBuf, &'static str)> {
+    let dir = config_dir();
+    let _ = fs::create_dir_all(&dir);
+
+    let mut report = Vec::new();
+
+    for (path, contents) in [
+        (dir.join("config.toml"), STARTER_CONFIG),
+        (dir.join("my_stack.md"), STARTER_STACK),
+    ] {
+        if path.exists() {
+            report.push((path, "already present"));
+        } else {
+            match fs::write(&path, contents) {
+                Ok(_) => report.push((path, "created")),
+                Err(_) => report.push((path, "failed to write")),
+            }
+        }
+    }
+
+    report
+}
