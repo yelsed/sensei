@@ -1,3 +1,14 @@
+```
+╔═══════════════════════════════╗
+║    a mentor in your shell     ║
+╟───────────────────────────────╢
+║  ____ ____ _  _ ____ ____ _   ║
+║  [__  |___ |\ | [__  |___ |   ║
+║  ___] |___ | \| ___] |___ |   ║
+║                               ║
+╚═══════════════════════════════╝
+```
+
 # sensei
 
 A Clippy-style learning assistant for your personal tech stack. Shows ambient tips and answers questions about Vim, Nuxt, Docker, Git, and Zsh — injected into the tools you already use.
@@ -239,4 +250,3 @@ Edit `~/.config/sensei/tips.json` (create it if it doesn't exist — it override
 - GitHub release with pre-built binaries for macOS and Linux
 - Publish `sensei.nvim` to GitHub so lazy.nvim can install it directly
 - Add more topics: TypeScript, Tailwind, SQL, Rust
-# sensai

@@ -188,6 +188,8 @@ async fn main() {
         }
 
         Command::Init => {
+            println!("{}", display::BANNER);
+            println!();
             for (path, status) in config::init_files() {
                 println!("{}: {}", path.display(), status);
             }

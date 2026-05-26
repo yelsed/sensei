@@ -2,6 +2,15 @@ use colored::Colorize;
 
 const BOX_WIDTH: usize = 52;
 
+pub const BANNER: &str = r#"╔═══════════════════════════════╗
+║    a mentor in your shell     ║
+╟───────────────────────────────╢
+║  ____ ____ _  _ ____ ____ _   ║
+║  [__  |___ |\ | [__  |___ |   ║
+║  ___] |___ | \| ___] |___ |   ║
+║                               ║
+╚═══════════════════════════════╝"#;
+
 pub fn print_tip(topic: &str, content: &str) {
     let label = format!("  💡 {}", topic.to_uppercase());
     let top = format!("╭{}╮", "─".repeat(BOX_WIDTH));
