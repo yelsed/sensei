@@ -1,10 +1,11 @@
 mod ai;
 mod config;
+mod detect;
 mod display;
 mod tip;
 
 use clap::{Parser, Subcommand};
-use config::{load_config, load_stack};
+use config::{load_combined_stack, load_config};
 use std::path::PathBuf;
 use tip::{get_tip, list_topics, load_tips};
 
@@ -61,6 +62,15 @@ enum Command {
     Topics,
     /// Scaffold ~/.config/sensei/{config.toml, my_stack.md} if missing.
     Init,
+    /// Detect your Neovim plugins and generate an AI stack description.
+    Stack {
+        /// Regenerate even if nothing changed since the last run.
+        #[arg(long)]
+        force: bool,
+        /// Override Ollama model
+        #[arg(short, long)]
+        model: Option<String>,
+    },
 }
 
 #[tokio::main]
@@ -94,16 +104,21 @@ async fn main() {
             // With editor context, try an Ollama-generated context-aware tip;
             // fall back to a static tip if Ollama is unreachable.
             let mut shown = false;
+            let mut offline = false;
             if !ctx.is_empty() {
                 let model = &config.model;
-                let stack = load_stack(&config).unwrap_or_else(|| "General developer".to_string());
-                match ai::context_tip(model, &stack, &ctx).await {
+                let stack = load_combined_stack(&config).unwrap_or_else(|| "General developer".to_string());
+                let spinner = display::Spinner::start("thinking…");
+                let result = ai::context_tip(model, &stack, &ctx).await;
+                drop(spinner);
+                match result {
                     Ok(response) => {
                         display::print_tip("VIM TIP", &response);
                         shown = true;
                     }
                     Err(e) => {
                         eprintln!("Ollama unavailable ({e}), falling back to static tip.");
+                        offline = true;
                     }
                 }
             }
@@ -111,6 +126,7 @@ async fn main() {
             if !shown {
                 let topic_ref = topic.as_deref();
                 match get_tip(&tips, topic_ref) {
+                    Some(t) if offline => display::print_tip_offline(&t.topic, &t.tip),
                     Some(t) => display::print_tip(&t.topic, &t.tip),
                     None => {
                         eprintln!("No tips found{}", topic.map(|t| format!(" for topic '{t}'")).unwrap_or_default());
@@ -122,14 +138,17 @@ async fn main() {
 
         Command::Explain { input, lang, context } => {
             let model = &config.model;
-            let stack = load_stack(&config).unwrap_or_else(|| "General developer".to_string());
+            let stack = load_combined_stack(&config).unwrap_or_else(|| "General developer".to_string());
 
-            match ai::generate_tip(model, &stack, None, None, Some(&input), lang.as_deref(), context.as_deref()).await {
+            let spinner = display::Spinner::start("thinking…");
+            let result = ai::generate_tip(model, &stack, None, None, Some(&input), lang.as_deref(), context.as_deref()).await;
+            drop(spinner);
+            match result {
                 Ok(response) => display::print_tip("EXPLAIN", &response),
                 Err(e) => {
                     eprintln!("Ollama unavailable ({e}), falling back to static tip.");
                     if let Some(t) = get_tip(&tips, None) {
-                        display::print_tip(&t.topic, &t.tip);
+                        display::print_tip_offline(&t.topic, &t.tip);
                     }
                 }
             }
@@ -137,14 +156,17 @@ async fn main() {
 
         Command::Ask { question, model } => {
             let model = model.as_deref().unwrap_or(&config.model);
-            let stack = load_stack(&config).unwrap_or_else(|| "General developer".to_string());
+            let stack = load_combined_stack(&config).unwrap_or_else(|| "General developer".to_string());
 
-            match ai::generate_tip(model, &stack, None, Some(&question), None, None, None).await {
+            let spinner = display::Spinner::start("thinking…");
+            let result = ai::generate_tip(model, &stack, None, Some(&question), None, None, None).await;
+            drop(spinner);
+            match result {
                 Ok(response) => display::print_tip("SENSEI", &response),
                 Err(e) => {
                     eprintln!("Ollama unavailable ({e}), falling back to static tip.");
                     if let Some(t) = get_tip(&tips, None) {
-                        display::print_tip(&t.topic, &t.tip);
+                        display::print_tip_offline(&t.topic, &t.tip);
                     }
                 }
             }
@@ -152,7 +174,7 @@ async fn main() {
 
         Command::Chat { model } => {
             let model = model.as_deref().unwrap_or(&config.model);
-            let stack = load_stack(&config).unwrap_or_else(|| "General developer".to_string());
+            let stack = load_combined_stack(&config).unwrap_or_else(|| "General developer".to_string());
 
             let input = match std::io::read_to_string(std::io::stdin()) {
                 Ok(s) => s,
@@ -194,6 +216,65 @@ async fn main() {
                 println!("{}: {}", path.display(), status);
             }
             println!("\nNext: edit your stack file, then run `ollama pull {}`.", config.model);
+        }
+
+        Command::Stack { force, model } => {
+            let model = model.as_deref().unwrap_or(&config.model);
+
+            let items = detect::detect_all();
+            if items.is_empty() {
+                println!(
+                    "No Neovim plugins found at {}.\nYou can describe your stack manually in {}.",
+                    detect::lazy_lock_path().display(),
+                    config::stack_file_path(&config).display(),
+                );
+                return;
+            }
+
+            let raw = detect::render_raw(&items);
+            let lock_contents = std::fs::read_to_string(detect::lazy_lock_path()).unwrap_or_default();
+            let new_hash = config::content_hash(&lock_contents);
+
+            if !force
+                && Some(&new_hash) == config::read_cached_hash().as_ref()
+                && config::detected_stack_path().exists()
+            {
+                println!(
+                    "Stack unchanged since last run ({} plugins). Use --force to regenerate.",
+                    items.len()
+                );
+                return;
+            }
+
+            let _ = std::fs::create_dir_all(config::config_dir());
+
+            let spinner = display::Spinner::start("summarizing your stack…");
+            let result = ai::summarize_stack(model, &raw).await;
+            drop(spinner);
+            let body = match result {
+                Ok(prose) => {
+                    display::print_tip("STACK", &prose);
+                    prose
+                }
+                Err(e) => {
+                    eprintln!(
+                        "Ollama unavailable ({e}); wrote the raw plugin list instead — \
+                         you can also edit your stack file by hand."
+                    );
+                    raw
+                }
+            };
+
+            if let Err(e) = std::fs::write(config::detected_stack_path(), &body) {
+                eprintln!("Failed to write detected stack: {e}");
+                std::process::exit(1);
+            }
+            let _ = std::fs::write(config::detected_hash_path(), &new_hash);
+            println!(
+                "Wrote {} ({} plugins detected).",
+                config::detected_stack_path().display(),
+                items.len()
+            );
         }
     }
 }

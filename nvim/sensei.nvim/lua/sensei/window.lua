@@ -299,12 +299,8 @@ function M.run_and_show(config, args, label, dismiss, message)
       lines = { "(sensei returned nothing)" }
     end
 
-    -- Binary exits 0 but warns on stderr when it fell back to a static tip.
-    if err:find("Ollama unavailable") then
-      table.insert(lines, 1, "")
-      table.insert(lines, 1, "⚠  Ollama unavailable — static tip shown. :SenseiHealth")
-    end
-
+    -- Offline fallback is now signalled inside the tip box on stdout, so we just
+    -- render it — no extra banner to avoid showing the notice twice.
     M.open(lines, config, dismiss)
   end)
 end

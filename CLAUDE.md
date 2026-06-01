@@ -30,6 +30,8 @@ nvim                            # <leader>st tip · <leader>sa chat · <leader>s
 ./target/debug/sensei tip --lang rust --mode n --line "fn main() {}"  # context-aware (AI; falls back to static if Ollama down)
 ./target/debug/sensei topics
 ./target/debug/sensei init                                     # scaffold config + my_stack.md (never overwrites)
+./target/debug/sensei stack                                    # detect nvim plugins, AI-summarize into detected_stack.md (cached; no-op if unchanged)
+./target/debug/sensei stack --force                            # regenerate even if lazy-lock.json unchanged
 ./target/debug/sensei ask "how do I center a line in vim?"     # requires Ollama running
 ./target/debug/sensei explain "const { data } = useFetch('/api/user')"
 echo '[{"role":"user","content":"how do I delete a word in vim?"}]' | ./target/debug/sensei chat  # multi-turn; reads JSON transcript on stdin
@@ -40,10 +42,11 @@ echo '[{"role":"user","content":"how do I delete a word in vim?"}]' | ./target/d
 ```
 src/
   main.rs       # clap CLI wiring — all subcommands defined here
-  config.rs     # loads ~/.config/sensei/config.toml and my_stack.md
+  config.rs     # loads config.toml + my_stack.md; load_combined_stack merges my_stack.md + detected_stack.md; content-hash cache helpers
+  detect.rs     # reads ~/.config/nvim/lazy-lock.json into a raw plugin list (StackSource trait — extensible to other sources)
   tip.rs        # loads tips/default.json, random selection, topic filter
   display.rs    # ANSI box renderer (colored crate)
-  ai.rs         # Ollama integration via ollama-rs: generate_tip, context_tip, chat (chat API)
+  ai.rs         # Ollama integration via ollama-rs: generate_tip, context_tip, chat, summarize_stack
 
 tips/
   default.json  # bundled tips — included at compile time via include_str!()
@@ -75,7 +78,8 @@ zed/
 - **Context-aware tips**: `tip` with `--lang/--mode/--line` asks Ollama for a Neovim motion relevant to the current buffer. Nvim sends these on `<leader>st`. Plain `tip` (and the VimEnter ambient tip) stays static/offline so startup is instant.
 - **Stateless chat**: the binary holds no session. The editor owns the conversation history and sends the full `[{role,content}]` transcript as JSON on stdin to `sensei chat` each turn; the binary prepends a mentor system prompt (+ `my_stack.md`) and returns the reply. Nvim runs this async via `jobstart` so the editor never freezes.
 - **ANSI stripping**: the binary outputs colored ANSI boxes for the terminal. The Nvim plugin and VS Code extension both strip ANSI codes before rendering in their own UI.
-- **`my_stack.md` as AI context**: loaded from `~/.config/sensei/my_stack.md` (or path in config.toml) and passed as the system prompt to Ollama. Richer file = better tips.
+- **`my_stack.md` as AI context**: `config::load_combined_stack` merges the hand-written `~/.config/sensei/my_stack.md` (or path in config.toml) with the AI-generated `detected_stack.md`, and passes the result as the system prompt to Ollama. Richer file = better tips.
+- **Detected stack (`sensei stack`)**: `detect.rs` reads `~/.config/nvim/lazy-lock.json` (plugin names) and `ai::summarize_stack` has Ollama write a concise prose description into `~/.config/sensei/detected_stack.md` — kept **separate** from the hand-written `my_stack.md` so regeneration never clobbers manual notes. A content hash of `lazy-lock.json` is cached in `detected_stack.hash`; `sensei stack` no-ops when unchanged (`--force` overrides). Regeneration is **explicit-only** — the AI query paths just read the cached file via `load_combined_stack`, so they never call Ollama twice or block the editor. If Ollama is down, `sensei stack` prints a note and writes the raw plugin list as fallback (never hard-fails). Detection is extensible via the `StackSource` trait (future: project deps, VS Code extensions).
 - **Zed limitation**: Zed extensions cannot place floating windows inline with code. Zed removed slash commands from the extension API (use MCP servers for AI panel integration instead). The Zed extension is currently a minimal stub.
 
 ## Adding tips

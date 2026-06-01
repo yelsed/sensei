@@ -115,9 +115,9 @@ export function activate(context: vscode.ExtensionContext) {
       );
       const panel = openPanel('Sensei: Explain');
       try {
-        const { stdout, stderr } = await runSensei(['explain', text, '--lang', lang, '--context', fileContext]);
-        const isFallback = stderr.includes('Ollama unavailable');
-        showPanel(context, 'Sensei: Explain', stdout + (isFallback ? '\n\n(Ollama unavailable — showing static tip)' : ''), panel);
+        const { stdout } = await runSensei(['explain', text, '--lang', lang, '--context', fileContext]);
+        // Offline fallback notice is now rendered inside the tip box on stdout.
+        showPanel(context, 'Sensei: Explain', stdout, panel);
       } catch (e) {
         panel.dispose();
         vscode.window.showErrorMessage(`Sensei: ${e}`);
@@ -129,9 +129,9 @@ export function activate(context: vscode.ExtensionContext) {
       if (!question) return;
       const panel = openPanel('Sensei: Answer');
       try {
-        const { stdout, stderr } = await runSensei(['ask', question]);
-        const isFallback = stderr.includes('Ollama unavailable');
-        showPanel(context, 'Sensei: Answer', stdout + (isFallback ? '\n\n(Ollama unavailable — showing static tip)' : ''), panel);
+        const { stdout } = await runSensei(['ask', question]);
+        // Offline fallback notice is now rendered inside the tip box on stdout.
+        showPanel(context, 'Sensei: Answer', stdout, panel);
       } catch (e) {
         panel.dispose();
         vscode.window.showErrorMessage(`Sensei: ${e}`);

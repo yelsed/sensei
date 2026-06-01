@@ -97,6 +97,26 @@ pub async fn chat(
     }
 }
 
+/// Summarize a raw detected-dependency list (e.g. Neovim plugins) into a short,
+/// clean markdown stack description. Used by `sensei stack` to populate
+/// `detected_stack.md`. Returns Err with the Ollama error string if unreachable.
+pub async fn summarize_stack(model: &str, raw_plugin_list: &str) -> Result<String, String> {
+    let ollama = Ollama::default();
+    let prompt = format!(
+        "You are a concise technical writer. Below is a raw list of a developer's \
+         Neovim plugins. Write a short, clean markdown description of their stack and \
+         tooling: group related plugins, name the key technologies, and infer the editor \
+         workflow (e.g. completion, LSP, fuzzy finding). Do not list every plugin verbatim \
+         — summarize. Output markdown only, no preamble.\n\n{raw_plugin_list}"
+    );
+    let request = GenerationRequest::new(model.to_string(), prompt);
+
+    match ollama.generate(request).await {
+        Ok(response) => Ok(response.response.trim().to_string()),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
 fn build_prompt(
     stack: &str,
     topic: Option<&str>,

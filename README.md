@@ -29,7 +29,14 @@ sensei tip --topic vim            # tip filtered by topic
 sensei explain "<code or text>"   # explain via Ollama
 sensei ask "<question>"           # ask a question via Ollama
 sensei topics                     # list available topics
+sensei stack                      # detect Neovim plugins, AI-summarize into your stack context
 ```
+
+`sensei stack` reads `~/.config/nvim/lazy-lock.json`, has Ollama summarize your plugins into
+`~/.config/sensei/detected_stack.md`, and that description is then injected into **every** AI
+query automatically — so you can ask about your plugins without retyping your setup. It caches
+on the lockfile's content hash (re-run is a no-op until your plugins change; `--force` regenerates).
+If Ollama is down it writes the raw plugin list and tells you to fill the stack by hand.
 
 If Ollama is not running, `explain` and `ask` fall back to a random static tip with a warning.
 

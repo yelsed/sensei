@@ -1,6 +1,7 @@
 use dirs::home_dir;
 use serde::Deserialize;
 use std::fs;
+use std::hash::{Hash, Hasher};
 use std::path::PathBuf;
 
 #[derive(Deserialize)]
@@ -52,6 +53,50 @@ pub fn stack_file_path(config: &Config) -> PathBuf {
 pub fn load_stack(config: &Config) -> Option<String> {
     let path = stack_file_path(config);
     fs::read_to_string(&path).ok()
+}
+
+/// AI-generated stack description, written by `sensei stack`. Kept separate from
+/// the hand-written `my_stack.md` so regeneration never clobbers manual notes.
+pub fn detected_stack_path() -> PathBuf {
+    config_dir().join("detected_stack.md")
+}
+
+/// Cache sidecar: holds the content hash of the lazy-lock.json that produced the
+/// current `detected_stack.md`, so `sensei stack` can no-op when nothing changed.
+pub fn detected_hash_path() -> PathBuf {
+    config_dir().join("detected_stack.hash")
+}
+
+/// Stable hash of a string. Used to detect lazy-lock.json content changes.
+/// Content hash, not mtime — lazy.nvim rewrites the lockfile on every sync even
+/// when its contents are identical.
+pub fn content_hash(s: &str) -> String {
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    s.hash(&mut hasher);
+    format!("{:x}", hasher.finish())
+}
+
+pub fn read_cached_hash() -> Option<String> {
+    fs::read_to_string(detected_hash_path())
+        .ok()
+        .map(|s| s.trim().to_string())
+}
+
+/// Effective AI context = hand-written `my_stack.md` + AI-detected stack,
+/// combined. Either may be absent; returns None only if both are missing. This
+/// only reads the cached `detected_stack.md` — no detection, no Ollama — so the
+/// AI query paths stay fast and never block the editor.
+pub fn load_combined_stack(config: &Config) -> Option<String> {
+    let mine = load_stack(config);
+    let detected = fs::read_to_string(detected_stack_path())
+        .ok()
+        .filter(|s| !s.trim().is_empty());
+    match (mine, detected) {
+        (Some(m), Some(d)) => Some(format!("{m}\n\n## Detected tooling\n\n{d}")),
+        (Some(m), None) => Some(m),
+        (None, Some(d)) => Some(format!("## Detected tooling\n\n{d}")),
+        (None, None) => None,
+    }
 }
 
 const STARTER_CONFIG: &str = r#"# sensei config
